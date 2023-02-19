@@ -44,3 +44,28 @@ Epoch [9/10], Step [800/938], Loss: 0.0018, out_t_mean:1.0000
 Epoch [10/10], Step [400/938], Loss: 0.0012, out_t_mean:1.0000
 Epoch [10/10], Step [800/938], Loss: 0.0376, out_t_mean:1.0000
 Accuracy of the network on the 10000 test images: 99.06 %
+
+Training with 50% Relu across dimension 1
+
+Epoch [1/10], Step [400/938], Loss: 0.1712
+Epoch [1/10], Step [800/938], Loss: 0.3537
+Epoch [2/10], Step [400/938], Loss: 0.2157
+Epoch [2/10], Step [800/938], Loss: 0.3023
+Epoch [3/10], Step [400/938], Loss: 0.2633
+Epoch [3/10], Step [800/938], Loss: 0.1657
+Epoch [4/10], Step [400/938], Loss: 0.2096
+Epoch [4/10], Step [800/938], Loss: 0.1803
+Epoch [5/10], Step [400/938], Loss: 0.3040
+Epoch [5/10], Step [800/938], Loss: 0.1781
+Epoch [6/10], Step [400/938], Loss: 0.1287
+Epoch [6/10], Step [800/938], Loss: 0.2875
+Epoch [7/10], Step [400/938], Loss: 0.1331
+Epoch [7/10], Step [800/938], Loss: 0.0790
+Epoch [8/10], Step [400/938], Loss: 0.1583
+Epoch [8/10], Step [800/938], Loss: 0.2573
+Epoch [9/10], Step [400/938], Loss: 0.0758
+Epoch [9/10], Step [800/938], Loss: 0.1352
+Epoch [10/10], Step [400/938], Loss: 0.1259
+Epoch [10/10], Step [800/938], Loss: 0.2036
+Accuracy of the network on the 10000 test images: 88.85 %
+

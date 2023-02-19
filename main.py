@@ -3,7 +3,6 @@ import torch
 import torch.nn as nn
 import torchvision
 import torchvision.transforms as transforms
-import torch.nn.functional as F
 from models.Lenet5 import LeNet5
 
 # Define relevant variables for the ML task
@@ -55,7 +54,6 @@ optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 total_step = len(train_loader)
 
 ## Training
-
 total_step = len(train_loader)
 for epoch in range(num_epochs):
     for i, (images, labels) in enumerate(train_loader):  
@@ -63,30 +61,28 @@ for epoch in range(num_epochs):
         labels = labels.to(device)
         
         #Forward pass
-        outputs,out_t = model(images)
+        outputs = model(images)
         loss = cost(outputs, labels)
-        loss += F.mse_loss(out_t,torch.ones_like(out_t))
         # Backward and optimize
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
         		
         if (i+1) % 400 == 0:
-            print ('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}, out_t_mean:{:.4f}' .format(epoch+1, num_epochs, i+1, total_step, loss.item(), out_t.abs().mean()))
+            print ('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}' .format(epoch+1, num_epochs, i+1, total_step, loss.item()))
 
 # Test the model
 # In test phase, we don't need to compute gradients (for memory efficiency)
-  
 with torch.no_grad():
     correct = 0
     total = 0
     for images, labels in test_loader:
         images = images.to(device)
         labels = labels.to(device)
-        outputs,_ = model(images)
+        outputs = model(images)
         _, predicted = torch.max(outputs.data, 1)
         total += labels.size(0)
         correct += (predicted == labels).sum().item()
 
     print('Accuracy of the network on the 10000 test images: {} %'.format(100 * correct / total))
-	 
+
