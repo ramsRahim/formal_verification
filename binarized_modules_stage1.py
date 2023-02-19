@@ -55,30 +55,32 @@ def _gumbel_sigmoid(input, temperature=1, hard=False, eps = 1e-10):
         ret = y_soft
     return ret
 
-# class _Quantize(torch.autograd.Function):
+""" class _Quantize(torch.autograd.Function):
     
-#     @staticmethod
-#     def forward(ctx, input, step,th):
-#         ctx.step= step.item()
-#         ctx.th = th.item()         
-#         output = input.clone().zero_()
+    @staticmethod
+    def forward(ctx, input, step,th):
+        ctx.step= step.item()
+        ctx.th = th.item()         
+        output = input.clone().zero_()
         
-#         output[input.ge(ctx.th)] = 1
-#         output[input.le(ctx.th)] = -1
+        output[input.ge(ctx.th)] = 1
+        output[input.le(ctx.th)] = -1
         
-#         return output
+        return output
                 
-#     @staticmethod
-#     def backward(ctx, grad_output):
-#         grad_input = grad_output.clone()/ctx.step
+    @staticmethod
+    def backward(ctx, grad_output):
+        grad_input = grad_output.clone()/ctx.step
         
-#         return grad_input, None,None
+        return grad_input, None,None
                 
-# quantize1 = _Quantize.apply
+quantize1 = _Quantize.apply """
 
 class bilinear(nn.Linear):
     def __init__(self, in_features, out_features, bias=True):
         super().__init__(in_features, out_features)
+
+        self.Beta=torch.Tensor(torch.ones(self.weight.size()[0])).fill_(1).cuda()
         self.mask=nn.Parameter(torch.Tensor(torch.ones(self.weight.size()[0])).fill_(1), requires_grad=True)
         # self.B_mask.fill_(0)
 
@@ -91,8 +93,10 @@ class bilinear(nn.Linear):
         #step = self.B_mask[self.B_mask.ge(th)+self.B_mask.le(-th)].abs().mean()
         
         self.masked_bw = _gumbel_sigmoid(self.mask*self.Beta, hard=True)
-        masked_weight = self.masked_bw[:, None, None, None]
-        
+        #print(self.masked_bw.shape)
+        masked_weight = self.masked_bw[:, None]#, None, None]
+        #print(masked_weight.shape)
+
         return F.linear(input, self.weight*masked_weight, self.bias) 
 
 
@@ -161,12 +165,12 @@ class BinarizeConv2d(nn.Conv2d):
         ### Li: performing the forward operation
         #bw = BinaryQuantize().apply(w3, self.k.to(w.device), self.t.to(w.device))
 
-        if self.searching:
+        #if self.searching:
             #print(self.mask.requires_grad)
             
-            # Adnan, this is new gumbel sigmoid method
-            self.masked_bw = _gumbel_sigmoid(self.mask*self.Beta, hard=True)
-            masked_weight = self.masked_bw[:, None, None, None]
+        # Adnan, this is new gumbel sigmoid method
+        self.masked_bw = _gumbel_sigmoid(self.mask*self.Beta, hard=True)
+        masked_weight = self.masked_bw[:, None, None, None]
 
             
             # mask_sig = torch.sigmoid((self.mask.cuda()-self.threshold)*self.Beta.cuda()).flatten()
@@ -181,7 +185,7 @@ class BinarizeConv2d(nn.Conv2d):
             # self.masked_bw = masks * self.q_val 
             #bw= w * masked_weight
             
-        else:
+        """  else:
             # if fix the mask, only train weight, do this
             if self.bias is None:
                 bias = None
@@ -189,7 +193,7 @@ class BinarizeConv2d(nn.Conv2d):
                 bias = self.bias * self.masked_bw.detach().cuda()
             masked_weight = self.masked_bw[:, None, None, None].detach().cuda()
             with torch.no_grad():
-                bw= bw * masked_weight
+                bw= bw * masked_weight """
 
         # if input.size()[1]==3:
         #     ba = a2
@@ -207,36 +211,36 @@ class BinarizeConv2d(nn.Conv2d):
 
 
 
-# class BinaryQuantize(Function):
-#     @staticmethod
-#     def forward(ctx, input, k, t):
-#         ctx.save_for_backward(input, k, t)
-#         out = torch.sign(input)
-#         return out
+""" class BinaryQuantize(Function):
+    @staticmethod
+    def forward(ctx, input, k, t):
+        ctx.save_for_backward(input, k, t)
+        out = torch.sign(input)
+        return out
 
-#     @staticmethod
-#     def backward(ctx, grad_output):
-#         input, k, t = ctx.saved_tensors
-#         grad_input = k * (2 * torch.sqrt(t**2 / 2) - torch.abs(t**2 * input))
-#         grad_input = grad_input.clamp(min=0) * grad_output.clone()
-#         return grad_input, None, None
+    @staticmethod
+    def backward(ctx, grad_output):
+        input, k, t = ctx.saved_tensors
+        grad_input = k * (2 * torch.sqrt(t**2 / 2) - torch.abs(t**2 * input))
+        grad_input = grad_input.clamp(min=0) * grad_output.clone()
+        return grad_input, None, None
 
 
-# class BinaryQuantize_a(Function):
-#     @staticmethod
-#     def forward(ctx, input, k, t):
-#         ctx.save_for_backward(input, k, t)
-#         out = torch.sign(input)
-#         return out
+class BinaryQuantize_a(Function):
+    @staticmethod
+    def forward(ctx, input, k, t):
+        ctx.save_for_backward(input, k, t)
+        out = torch.sign(input)
+        return out
 
-#     @staticmethod
-#     def backward(ctx, grad_output):
-#         input, k, t = ctx.saved_tensors
-#         k = torch.tensor(1.).to(input.device)
-#         t = max(t, torch.tensor(1.).to(input.device))
-#         grad_input = k * (2 * torch.sqrt(t**2 / 2) - torch.abs(t**2 * input))
-#         grad_input = grad_input.clamp(min=0) * grad_output.clone()
-#         return grad_input, None, None
+    @staticmethod
+    def backward(ctx, grad_output):
+        input, k, t = ctx.saved_tensors
+        k = torch.tensor(1.).to(input.device)
+        t = max(t, torch.tensor(1.).to(input.device))
+        grad_input = k * (2 * torch.sqrt(t**2 / 2) - torch.abs(t**2 * input))
+        grad_input = grad_input.clamp(min=0) * grad_output.clone()
+        return grad_input, None, None """
 
 
 def get_ab(N):
