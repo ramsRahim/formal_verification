@@ -80,8 +80,8 @@ class bilinear(nn.Linear):
     def __init__(self, in_features, out_features, bias=True):
         super().__init__(in_features, out_features)
 
-        self.Beta=torch.Tensor(torch.ones(self.weight.size()[0])).fill_(1).cuda()
-        self.mask=nn.Parameter(torch.Tensor(torch.ones(self.weight.size()[0])).fill_(1), requires_grad=True)
+        self.Beta=torch.Tensor(torch.ones(self.weight.size()[1])).fill_(1).cuda()
+        self.mask=nn.Parameter(torch.Tensor(torch.ones(self.weight.size()[1])).fill_(1), requires_grad=True)
         # self.B_mask.fill_(0)
 
         
@@ -94,10 +94,10 @@ class bilinear(nn.Linear):
         
         self.masked_bw = _gumbel_sigmoid(self.mask*self.Beta, hard=True)
         #print(self.masked_bw.shape)
-        masked_weight = self.masked_bw[:, None]#, None, None]
+        masked_weight = self.masked_bw #[:, None]#, None, None]
         #print(masked_weight.shape)
 
-        return F.linear(input, self.weight*masked_weight, self.bias) 
+        return F.linear(input, self.weight*masked_weight , self.bias)
 
 
 
