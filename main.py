@@ -85,3 +85,15 @@ for epoch in range(num_epochs):
 
         accuracy = 100 * correct / total
         print('Test Accuracy of the model on the test images: {} %'.format(accuracy))
+
+perc_zeros = []
+for i in range(len(model.features)):
+    try:
+        mask = model.features[i].masked_bw
+        zeros = ((mask == 0).sum(dim = 0))
+        perc = (zeros/len(mask))*100
+        perc_zeros.append(perc.item())
+    except:
+        continue
+
+print("The percenatage of zeros after each layer is",perc_zeros)
