@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torchvision
 import torchvision.transforms as transforms
-from models.Vgg11 import VGG11
+from models.Vgg16 import VGG16
 import random
 import numpy as np
 
@@ -19,36 +19,46 @@ torch.backends.cudnn.benchmark = False
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # Define hyperparameters
-num_epochs = 50
+num_epochs = 100
 batch_size = 128
-learning_rate = 0.0001
+learning_rate = 0.001
+
 
 # Load and transform CIFAR-10 data
-transform_train = transforms.Compose([
-    transforms.RandomCrop(32, padding=4),
+normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                     std=[0.229, 0.224, 0.225])
+
+transform = transforms.Compose([
     transforms.RandomHorizontalFlip(),
+     transforms.RandomCrop(32, 4),
     transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                         std=[0.229, 0.224, 0.225])
+    transforms.Normalize( 
+       mean=[0.485, 0.456, 0.406],
+        std=[0.229, 0.224, 0.225] 
+    )
 ])
+train_dataset = torchvision.datasets.CIFAR10(
+    root= './data', train = True,
+    download =True, transform = transform)
+test_dataset = torchvision.datasets.CIFAR10(
+    root= './data', train = False,
+    download =True, transform =transforms.Compose([
+            transforms.ToTensor(),
+            normalize,
+        ]))
 
-transform_test = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                         std=[0.229, 0.224, 0.225])
-])
-
-train_dataset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform_train)
-test_dataset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform_test)
-
-train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=2)
-test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=2)
+train_loader = torch.utils.data.DataLoader(train_dataset
+    , batch_size = batch_size
+    , shuffle = True)
+test_loader = torch.utils.data.DataLoader(test_dataset
+    , batch_size = batch_size
+    , shuffle = True)
 
 # Define VGG11 model and optimizer
-model = VGG11(num_classes=10).to(device)
-optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-# Define loss function
+model = VGG16(num_classes=10).to(device)
 criterion = nn.CrossEntropyLoss()
+optimizer = torch.optim.SGD(model.parameters(), lr = learning_rate, momentum=0.9,weight_decay=5e-4)
+scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=50, gamma=0.1)
 
 # Train the model
 total_step = len(train_loader)
@@ -65,12 +75,10 @@ for epoch in range(num_epochs):
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-
         if (i+1) % 100 == 0:
             print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}'
                   .format(epoch+1, num_epochs, i+1, total_step, loss.item()))
-        
-
+            
     # Test the model after each epoch
     with torch.no_grad():
         correct = 0
@@ -86,14 +94,14 @@ for epoch in range(num_epochs):
         accuracy = 100 * correct / total
         print('Test Accuracy of the model on the test images: {} %'.format(accuracy))
 
-perc_zeros = []
-for i in range(len(model.features)):
-    try:
-        mask = model.features[i].masked_bw
-        zeros = ((mask == 0).sum(dim = 0))
-        perc = (zeros/len(mask))*100
-        perc_zeros.append(perc.item())
-    except:
-        continue
+# perc_zeros = []
+# for i in range(len(model.features)):
+#     try:
+#         mask = model.features[i].masked_bw
+#         zeros = ((mask == 0).sum(dim = 0))
+#         perc = (zeros/len(mask))*100
+#         perc_zeros.append(perc.item())
+#     except:
+#         continue
 
-print("The percenatage of zeros after each layer is",perc_zeros)
+# print("The percenatage of zeros after each layer is",perc_zeros)
