@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torchvision
 import torchvision.transforms as transforms
-from models.Vgg16 import VGG16
+from models.Vgg11 import VGG11
 import random
 import numpy as np
 
@@ -19,7 +19,7 @@ torch.backends.cudnn.benchmark = False
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # Define hyperparameters
-num_epochs = 100
+num_epochs = 50
 batch_size = 128
 learning_rate = 0.001
 
@@ -55,7 +55,7 @@ test_loader = torch.utils.data.DataLoader(test_dataset
     , shuffle = True)
 
 # Define VGG11 model and optimizer
-model = VGG16(num_classes=10).to(device)
+model = VGG11(num_classes=10).to(device)
 criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.SGD(model.parameters(), lr = learning_rate, momentum=0.9,weight_decay=5e-4)
 scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=50, gamma=0.1)
@@ -93,6 +93,10 @@ for epoch in range(num_epochs):
 
         accuracy = 100 * correct / total
         print('Test Accuracy of the model on the test images: {} %'.format(accuracy))
+
+# Save the model 
+torch.save(model.state_dict(), '../Models/vgg11.pth')
+
 
 # perc_zeros = []
 # for i in range(len(model.features)):

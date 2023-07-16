@@ -205,9 +205,12 @@ class BinarizeConv2d(nn.Conv2d):
         output = F.conv2d(a0,  w*masked_weight, self.bias, self.stride, self.padding,
                             self.dilation, self.groups) #layerwise/elelmet
         
+        bias = nn.Parameter(torch.Tensor(torch.ones(output.size())).fill_(1), requires_grad=True).cuda()
+        relu = nn.ReLU()
+        bias = relu(bias)
         #* scaling factor
         #output = output  * bw#self.alpha
-        return output
+        return output + bias
 
 
 
